@@ -7,23 +7,23 @@
     Description: V1 73Diesel.com Javascript API
 */
 
+const API_VERSION = '1.0.3';
+
 // Sort options for calibrations
 const CalSort ={
     POWER:1,
     DATE:2,
     NAME:3,
     OPTIONS:4
-};
+}
 
 
 class STD_API
 {
-    post_uri;
-    status_buffer;
-    User; 
-
     constructor ()
     {     
+        this.post_uri = '';
+        this.status_buffer = '';
         this.User = new STD_User();
     }
     //Called to set the internal post URI 
@@ -96,6 +96,20 @@ class STD_API
     {
         let form_fields= new FormData();       
         form_fields.set('DEVICE', 'GET');    
+        this.ServerRequest(form_fields, callback);
+    }
+    //Loads all user devices
+    GetDevices(callback)
+    {
+        let form_fields= new FormData();       
+        form_fields.set('DEVICE', 'GET_DEVICES');    
+        this.ServerRequest(form_fields, callback);
+    }
+    //Get user tokens
+    GetUserTokens(callback)
+    {
+        let form_fields= new FormData();       
+        form_fields.set('DEVICE', 'GET_TOKENS');    
         this.ServerRequest(form_fields, callback);
     }
     //Request an user token update
@@ -174,7 +188,7 @@ class STD_API
     UpdateInvoices(limit, callback)
     {
         let form_fields= new FormData();      
-        form_fields.set('DEVICE','GET_INVOICES');     
+        form_fields.set('DEVICE','GET_TRANSACTIONS');     
         form_fields.set('limit', limit);     
         this.ServerRequest(form_fields, callback);
     }
@@ -221,6 +235,7 @@ class STD_API
                 break;          
                 case 200:
                     if(download){
+                        this.status_buffer ='';
                         try{    
                             let a = document.createElement("a");
                             document.body.appendChild(a);
@@ -279,22 +294,16 @@ class STD_API
 
 class STD_User
 {
-    tokens;
-    transactions;
-    devices;
-    current_cals;
-
-    tokens_changed;
-    transactions_changed;
-    devices_changed;
-    current_cals_changed;
-
     constructor()
     {
         this.tokens = 0;
         this.devices = new Array();
         this.transactions = new Array();
         this.current_cals = new Array();
+        this.tokens_changed = false;
+        this.transactions_changed = false;
+        this.devices_changed = false;
+        this.current_cals_changed = false;
     }
 //TOKENS
     //Set the internal token count
@@ -315,10 +324,10 @@ class STD_User
     }
 //TRANSACTIONS
     //Sets the internal transaction array
-    SetTransactions(transactions)
+    SetTransactions(inv_arr)
     {
         this.transactions = new Array();
-        transactions.forEach(invoice => {
+        inv_arr.forEach(invoice => {
             let new_invoice = new Transaction();
             if(new_invoice.SetFromResponse(invoice)){
                 this.transactions.push(new_invoice);
@@ -364,7 +373,7 @@ class STD_User
     //Returns the device at a given index, returns an empty array if index is out of bounds
     GetDevice(index)
     {
-        let device = new Array();
+        let device = false;
         if(index != null){
             if(this.devices.length > 0 && index < this.devices.length)
             {
@@ -452,19 +461,19 @@ class STD_User
     }
 }
 
-class Device{
-    serial;
-    name;
-    year;
-    model;
-    catchword;
-    strategy;
-    body_size;
-    nozzle_size;
-    trans_type;
-    upgrade_status;
-
+class Device
+{
     constructor(){
+        this.serial = '';
+        this.name = '';
+        this.year = '';
+        this.model = '';
+        this.catchword = '';
+        this.strategy = '';
+        this.body_size = 0;
+        this.nozzle_size = 0;
+        this.trans_type = 0;
+        this.upgrade_status = 0;
     }
 
     Set(serial, name, year, model, catchword, strategy, body, nozzle, trans, status)
@@ -514,14 +523,14 @@ class Device{
 
 }
 class Calibration{
-    id;
-    name;
-    power_level;
-    options;
-    date;
 
     constructor()
     {
+        this.id = -1;
+        this.name = '';
+        this.power_level = -1;
+        this.options = '';
+        this.date = '';
     }
 
     Set(id, name, level, options, date)
@@ -555,17 +564,16 @@ class Calibration{
     }
 
 }
-class Transaction{
-    ref_num;
-    confirmation;
-    sku;
-    from;
-    to;
-    note;
-    quantity;
-    date;
-
+class Transaction{   
     constructor(){
+        this.ref_num = -1;
+        this.confirmation = -1;
+        this.sku = -1;
+        this.from = '';
+        this.to = '';
+        this.note = '';
+        this.quantity = -1;
+        this.date = '';    
     }
 
     Set(refrence, confirmation, sku, from, to, note, quantity, date)
